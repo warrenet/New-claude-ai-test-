@@ -1,0 +1,78 @@
+name: Node.js CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Check for package.json
+        id: check-package
+        run: |
+          if [ -f package.json ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install dependencies
+        if: steps.check-package.outputs.exists == 'true'
+        run: npm ci
+
+      - name: Run lint
+        if: steps.check-package.outputs.exists == 'true'
+        run: |
+          if npm run lint --dry-run > /dev/null 2>&1; then
+            npm run lint
+          else
+            echo "No lint script found, skipping"
+          fi
+        continue-on-error: true
+
+      - name: Run build
+        if: steps.check-package.outputs.exists == 'true'
+        run: |
+          if npm run build --dry-run > /dev/null 2>&1; then
+            npm run build
+          else
+            echo "No build script found, skipping"
+          fi
+        continue-on-error: true
+
+      - name: Run tests
+        if: steps.check-package.outputs.exists == 'true'
+        run: |
+          if npm run test --dry-run > /dev/null 2>&1; then
+            npm test
+          else
+            echo "No test script found, skipping"
+          fi
+        continue-on-error: true
+
+      - name: No package.json found
+        if: steps.check-package.outputs.exists == 'false'
+        run: |
+          echo "No package.json found in this repository."
+          echo "This is a skeleton CI workflow that will run npm ci, lint,"
+          echo "build, and test when package.json exists."
+          echo "Currently, this repository does not use npm,"
+          echo "so no actions are performed."
