@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+
 jobs:
   # Skeleton CI job - can be expanded when package.json is added
   lint-and-test:
