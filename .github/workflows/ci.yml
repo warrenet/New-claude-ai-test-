@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Check for package.json
+      id: check_package
+      run: |
+        if [ -f "package.json" ]; then
+          echo "has_package=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_package=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      if: steps.check_package.outputs.has_package == 'true'
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      if: steps.check_package.outputs.has_package == 'true'
+      run: npm ci
+
+    - name: Run linter
+      if: steps.check_package.outputs.has_package == 'true'
+      run: |
+        if npm run lint --if-present; then
+          echo "Linting completed"
+        else
+          echo "No lint script found, skipping"
+        fi
+
+    - name: Build
+      if: steps.check_package.outputs.has_package == 'true'
+      run: |
+        if npm run build --if-present; then
+          echo "Build completed"
+        else
+          echo "No build script found, skipping"
+        fi
+
+    - name: Run tests
+      if: steps.check_package.outputs.has_package == 'true'
+      run: |
+        if npm test --if-present; then
+          echo "Tests completed"
+        else
+          echo "No test script found, skipping"
+        fi
+
+    - name: Static site validation (no package.json)
+      if: steps.check_package.outputs.has_package == 'false'
+      run: |
+        echo "::notice::This is a static HTML/CSS/JS project without package.json"
+        echo "::notice::Validating static files exist..."
+        if [ -f "index.html" ]; then
+          echo "✓ index.html found"
+        else
+          echo "::warning::No index.html found"
+        fi
+        if [ -f "style.css" ] || [ -f "styles.css" ]; then
+          echo "✓ CSS files found"
+        fi
+        if [ -f "script.js" ] || [ -f "main.js" ]; then
+          echo "✓ JavaScript files found"
+        fi

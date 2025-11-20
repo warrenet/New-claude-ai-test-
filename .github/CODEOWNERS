@@ -1,0 +1,21 @@
+# Code Owners
+# This file defines individuals or teams that are responsible for code in this repository.
+# 
+# Each line is a file pattern followed by one or more owners.
+# Order is important; the last matching pattern takes the most precedence.
+#
+# For more information: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+* @warrenet
+
+# GitHub Actions and workflows
+/.github/ @warrenet
+
+# Documentation
+*.md @warrenet
+
+# Configuration files
+*.json @warrenet
+*.yml @warrenet
+*.yaml @warrenet
